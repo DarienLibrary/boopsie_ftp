@@ -8,20 +8,26 @@ host = os.environ.get('boopsie_host')
 user = os.environ.get('boopsie_user')
 password = os.environ.get('boopsie_password')
 local_directory = r'C:\ProgramData\Polaris\SrServiceRoot\Ginny\18\scheduledjobs'
-filename_trunc = 'bib_Boopsie Full MARC_{}'.format(date.today().strftime('%m%d%Y'))
-logfile = 'log_boobsie.txt'
+filename_trunc = 'bib_Boopsie Full MARC_{}'.format(
+    date.today().strftime('%m%d%Y'))
+logfile = 'log_boopsie.txt'
 filename = ''
 for f in os.listdir(local_directory):
-    if f.startswith(filename_trunc): filename = f
-    
+    if f.startswith(filename_trunc):
+        filename = f
+
+
 def zip_file(filename, directory):
-    zip_filename = filename.split('.')[0]+'.zip'
-    zf = zipfile.ZipFile(zip_filename, mode='w')
+    zip_filename = 'catalog_extract_full.zip'
+    arcname = 'catalog_extract_full.mrc'
+    zf = zipfile.ZipFile(
+        zip_filename, compression=zipfile.ZIP_DEFLATED, mode='w')
     try:
-        zf.write(full_filename, filename)
+        zf.write(full_filename, arcname)
     finally:
         zf.close()
     return zip_filename
+
 
 def ftp_put(host, user, password, filename, directory):
     full_filename = r'{}\{}'.format(directory, filename)
@@ -29,8 +35,8 @@ def ftp_put(host, user, password, filename, directory):
     ftp.cwd('darien')
     with open(full_filename, 'rb') as f:
         ftp.storbinary('STOR {}'.format(filename), f)
-    with open(logfile, 'a') as f:
-        f.write('{}: {} uploaded from {}'.format(datetime.now(), filename, directory))
+    ftp.close()
+
 
 if filename:
     full_filename = r'{}\{}'.format(local_directory, filename)
@@ -41,6 +47,9 @@ if filename:
     else:
         ftp_put(host, user, password, filename, local_directory)
     os.remove(full_filename)
+    with open(logfile, 'a') as f:
+        f.write('{}: Successfully uploaded {}\n'.format(
+            datetime.now(), full_filename))
 else:
     with open(logfile, 'a') as f:
-        f.write('{}: File not found to upload'.format(datetime.now()))
+        f.write('{}: File not found to upload\n'.format(datetime.now()))
